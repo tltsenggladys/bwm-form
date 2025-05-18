@@ -2,104 +2,107 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8" />
-  <title>BWM 禁止重複分數選單版</title>
+  <meta charset="UTF-8">
+  <title>BWM 表單：動態選單去除重複</title>
   <style>
     body { font-family: Arial; margin: 30px; }
-    select { width: 70px; }
     table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-    td, th { border: 1px solid #ccc; padding: 6px; text-align: center; }
+    td, th { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    select { width: 60px; }
   </style>
   <script>
-    const allCodes = ["C1", "C2", "C3", "C4", "C5", "C6"];
-    function updateLabels() {
-      const best = document.getElementById("best").value;
-      const worst = document.getElementById("worst").value;
-      document.getElementById("bestTitle").textContent = best ? "最重要的準則：" + best : "最重要的準則：";
-      document.getElementById("worstTitle").textContent = worst ? "最不重要的準則：" + worst : "最不重要的準則：";
-      
-      allCodes.forEach(c => {
-        let bSel = document.getElementById("B_" + c);
-        let wSel = document.getElementById(c + "_W");
-        bSel.disabled = false; wSel.disabled = false;
-        bSel.innerHTML = genOptions(); wSel.innerHTML = genOptions();
-      });
+const allCodes = ["C1", "C2", "C3", "C4", "C5", "C6"];
+function updateLabels() {
+  const best = document.getElementById("best").value;
+  const worst = document.getElementById("worst").value;
+  document.getElementById("bestTitle").textContent = best ? "最重要的準則：" + best : "最重要的準則：";
+  document.getElementById("worstTitle").textContent = worst ? "最不重要的準則：" + worst : "最不重要的準則：";
 
-      if (best) {
-        let bestB = document.getElementById("B_" + best);
-        bestB.innerHTML = '<option value="1" selected>1</option>'; bestB.disabled = true;
+  allCodes.forEach(c => {
+    let bSel = document.getElementById("B_" + c);
+    let wSel = document.getElementById(c + "_W");
+    bSel.disabled = false; wSel.disabled = false;
+    bSel.innerHTML = genOptions(); wSel.innerHTML = genOptions();
+  });
 
-        let bestW = document.getElementById(best + "_W");
-        bestW.innerHTML = '<option value="9" selected>9</option>'; bestW.disabled = true;
-      }
-      if (worst) {
-        let worstB = document.getElementById("B_" + worst);
-        worstB.innerHTML = '<option value="9" selected>9</option>'; worstB.disabled = true;
+  if (best) {
+    document.getElementById("B_" + best).innerHTML = '<option value="1" selected>1</option>';
+    document.getElementById("B_" + best).disabled = true;
+    document.getElementById(best + "_W").innerHTML = '<option value="9" selected>9</option>';
+    document.getElementById(best + "_W").disabled = true;
+  }
+  if (worst) {
+    document.getElementById("B_" + worst).innerHTML = '<option value="9" selected>9</option>';
+    document.getElementById("B_" + worst).disabled = true;
+    document.getElementById(worst + "_W").innerHTML = '<option value="1" selected>1</option>';
+    document.getElementById(worst + "_W").disabled = true;
+  }
 
-        let worstW = document.getElementById(worst + "_W");
-        worstW.innerHTML = '<option value="1" selected>1</option>'; worstW.disabled = true;
-      }
+  removeDuplicates();
+}
 
-      // remove already selected values from other dropdowns
-      removeDuplicates();
+function genOptions(exclude = [], keep = "") {
+  let html = '<option value="">請選擇</option>';
+  for (let i = 1; i <= 9; i++) {
+    if (!exclude.includes(i.toString()) || i.toString() === keep) {
+      html += `<option value="${i}">${i}</option>`;
     }
+  }
+  return html;
+}
 
-    function genOptions(exclude=[]) {
-      let html = '<option value="">請選擇</option>';
-      for (let i = 1; i <= 9; i++) {
-        if (!exclude.includes(i.toString())) {
-          html += '<option value="' + i + '">' + i + '</option>';
-        }
-      }
-      return html;
+function removeDuplicates() {
+  const used = new Set();
+  const map = {};
+
+  allCodes.forEach(c => {
+    const bSel = document.getElementById("B_" + c);
+    const wSel = document.getElementById(c + "_W");
+    if (!bSel.disabled && bSel.value) used.add(bSel.value);
+    if (!wSel.disabled && wSel.value) used.add(wSel.value);
+    map["B_" + c] = bSel.value;
+    map[c + "_W"] = wSel.value;
+  });
+
+  allCodes.forEach(c => {
+    const bSel = document.getElementById("B_" + c);
+    const wSel = document.getElementById(c + "_W");
+    if (!bSel.disabled) bSel.innerHTML = genOptions(Array.from(used), map["B_" + c]);
+    if (!wSel.disabled) wSel.innerHTML = genOptions(Array.from(used), map[c + "_W"]);
+  });
+}
+
+function validateForm() {
+  const seen = new Set();
+  const values = [];
+  for (let c of allCodes) {
+    let bv = document.getElementById("B_" + c).value;
+    let wv = document.getElementById(c + "_W").value;
+    if (bv && bv !== "1" && bv !== "9") values.push(bv);
+    if (wv && wv !== "1" && wv !== "9") values.push(wv);
+  }
+  for (let val of values) {
+    if (seen.has(val)) {
+      alert("出現重複的重要程度分數：" + val + "\n請避免重複填寫（1 和 9 除外）");
+      return false;
     }
-
-    function removeDuplicates() {
-      const selectedValues = new Set();
-      allCodes.forEach(c => {
-        let b = document.getElementById("B_" + c);
-        let w = document.getElementById(c + "_W");
-        if (!b.disabled && b.value) selectedValues.add(b.value);
-        if (!w.disabled && w.value) selectedValues.add(w.value);
-      });
-
-      allCodes.forEach(c => {
-        let b = document.getElementById("B_" + c);
-        let w = document.getElementById(c + "_W");
-        if (!b.disabled) b.innerHTML = genOptions(Array.from(selectedValues).filter(v => v !== b.value));
-        if (!w.disabled) w.innerHTML = genOptions(Array.from(selectedValues).filter(v => v !== w.value));
-      });
-    }
-
-    function validateForm() {
-      const seen = new Set();
-      const values = [];
-      for (let c of allCodes) {
-        let bv = document.getElementById("B_" + c).value;
-        let wv = document.getElementById(c + "_W").value;
-        if (bv && bv !== "1" && bv !== "9") values.push(bv);
-        if (wv && wv !== "1" && wv !== "9") values.push(wv);
-      }
-      for (let val of values) {
-        if (seen.has(val)) {
-          alert("出現重複的重要程度分數：" + val + "\n請避免重複填寫（1 和 9 除外）");
-          return false;
-        }
-        seen.add(val);
-      }
-      return true;
-    }
-  </script>
+    seen.add(val);
+  }
+  return true;
+}
+</script>
 </head>
 <body>
 <h2>BWM 問卷：共享單車保單保障擴展</h2>
 <form method="post" action="YOUR_GOOGLE_SCRIPT_URL_HERE" onsubmit="return validateForm();">
+
 <label>請選擇最重要準則：</label>
 <select id="best" name="best" onchange="updateLabels()" required>
   <option value="">請選擇</option>
   <option value="C1">C1</option><option value="C2">C2</option><option value="C3">C3</option>
   <option value="C4">C4</option><option value="C5">C5</option><option value="C6">C6</option>
 </select><br><br>
+
 <label>請選擇最不重要準則：</label>
 <select id="worst" name="worst" onchange="updateLabels()" required>
   <option value="">請選擇</option>
@@ -108,29 +111,26 @@
 </select>
 
 <h3 id="bestTitle">最重要的準則：</h3>
-<table border="1">
-<tr><th>準則</th><th>與最重要準則的比較值</th></tr>
-<tr><td>C1</td><td><select id="B_C1" name="B_C1"><option value="">請選擇</option></select></td></tr>
-<tr><td>C2</td><td><select id="B_C2" name="B_C2"><option value="">請選擇</option></select></td></tr>
-<tr><td>C3</td><td><select id="B_C3" name="B_C3"><option value="">請選擇</option></select></td></tr>
-<tr><td>C4</td><td><select id="B_C4" name="B_C4"><option value="">請選擇</option></select></td></tr>
-<tr><td>C5</td><td><select id="B_C5" name="B_C5"><option value="">請選擇</option></select></td></tr>
-<tr><td>C6</td><td><select id="B_C6" name="B_C6"><option value="">請選擇</option></select></td></tr>
+<table><tr><th>準則</th><th>與最重要準則的比較值</th></tr>
+<tr><td>C1</td><td><select id="B_C1" name="B_C1" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
+<tr><td>C2</td><td><select id="B_C2" name="B_C2" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
+<tr><td>C3</td><td><select id="B_C3" name="B_C3" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
+<tr><td>C4</td><td><select id="B_C4" name="B_C4" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
+<tr><td>C5</td><td><select id="B_C5" name="B_C5" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
+<tr><td>C6</td><td><select id="B_C6" name="B_C6" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
 </table>
 
 <h3 id="worstTitle">最不重要的準則：</h3>
-<table border="1">
-<tr><th>準則</th><th>與最不重要準則的比較值</th></tr>
-<tr><td>C1</td><td><select id="C1_W" name="C1_W"><option value="">請選擇</option></select></td></tr>
-<tr><td>C2</td><td><select id="C2_W" name="C2_W"><option value="">請選擇</option></select></td></tr>
-<tr><td>C3</td><td><select id="C3_W" name="C3_W"><option value="">請選擇</option></select></td></tr>
-<tr><td>C4</td><td><select id="C4_W" name="C4_W"><option value="">請選擇</option></select></td></tr>
-<tr><td>C5</td><td><select id="C5_W" name="C5_W"><option value="">請選擇</option></select></td></tr>
-<tr><td>C6</td><td><select id="C6_W" name="C6_W"><option value="">請選擇</option></select></td></tr>
+<table><tr><th>準則</th><th>與最不重要準則的比較值</th></tr>
+<tr><td>C1</td><td><select id="C1_C1" name="C1_C1" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
+<tr><td>C2</td><td><select id="C2_C2" name="C2_C2" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
+<tr><td>C3</td><td><select id="C3_C3" name="C3_C3" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
+<tr><td>C4</td><td><select id="C4_C4" name="C4_C4" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
+<tr><td>C5</td><td><select id="C5_C5" name="C5_C5" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
+<tr><td>C6</td><td><select id="C6_C6" name="C6_C6" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
 </table>
 
-<br><br>
-<input type="submit" value="提交問卷" style="font-size:16px;padding:10px 20px;">
+<br><br><input type="submit" value="提交問卷" style="font-size:16px; padding:10px 20px;">
 </form>
 </body>
 </html>
