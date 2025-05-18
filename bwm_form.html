@@ -2,13 +2,13 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <title>BWM 表單：動態選單去除重複</title>
+  <meta charset="UTF-8" />
+  <title>BWM 下拉選單禁止重複版</title>
   <style>
     body { font-family: Arial; margin: 30px; }
     table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-    td, th { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    select { width: 60px; }
+    td, th { border: 1px solid #ccc; padding: 6px; text-align: center; }
+    select { width: 70px; }
   </style>
   <script>
 const allCodes = ["C1", "C2", "C3", "C4", "C5", "C6"];
@@ -18,57 +18,88 @@ function updateLabels() {
   document.getElementById("bestTitle").textContent = best ? "最重要的準則：" + best : "最重要的準則：";
   document.getElementById("worstTitle").textContent = worst ? "最不重要的準則：" + worst : "最不重要的準則：";
 
-  allCodes.forEach(c => {
-    let bSel = document.getElementById("B_" + c);
-    let wSel = document.getElementById(c + "_W");
-    bSel.disabled = false; wSel.disabled = false;
-    bSel.innerHTML = genOptions(); wSel.innerHTML = genOptions();
+  allCodes.forEach(code => {
+    let bSel = document.getElementById("B_" + code);
+    let wSel = document.getElementById(code + "_W");
+    bSel.disabled = false;
+    wSel.disabled = false;
+    bSel.value = "";
+    wSel.value = "";
+    populateDropdown(bSel);
+    populateDropdown(wSel);
   });
 
   if (best) {
-    document.getElementById("B_" + best).innerHTML = '<option value="1" selected>1</option>';
-    document.getElementById("B_" + best).disabled = true;
-    document.getElementById(best + "_W").innerHTML = '<option value="9" selected>9</option>';
-    document.getElementById(best + "_W").disabled = true;
+    const bBest = document.getElementById("B_" + best);
+    bBest.innerHTML = '<option value="1" selected>1</option>';
+    bBest.disabled = true;
+
+    const wBest = document.getElementById(best + "_W");
+    wBest.innerHTML = '<option value="9" selected>9</option>';
+    wBest.disabled = true;
   }
   if (worst) {
-    document.getElementById("B_" + worst).innerHTML = '<option value="9" selected>9</option>';
-    document.getElementById("B_" + worst).disabled = true;
-    document.getElementById(worst + "_W").innerHTML = '<option value="1" selected>1</option>';
-    document.getElementById(worst + "_W").disabled = true;
+    const bWorst = document.getElementById("B_" + worst);
+    bWorst.innerHTML = '<option value="9" selected>9</option>';
+    bWorst.disabled = true;
+
+    const wWorst = document.getElementById(worst + "_W");
+    wWorst.innerHTML = '<option value="1" selected>1</option>';
+    wWorst.disabled = true;
   }
 
   removeDuplicates();
 }
 
-function genOptions(exclude = [], keep = "") {
-  let html = '<option value="">請選擇</option>';
+function populateDropdown(select) {
+  select.innerHTML = "";
+  const option = document.createElement("option");
+  option.value = "";
+  option.text = "請選擇";
+  select.appendChild(option);
   for (let i = 1; i <= 9; i++) {
-    if (!exclude.includes(i.toString()) || i.toString() === keep) {
-      html += `<option value="${i}">${i}</option>`;
-    }
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.text = i;
+    select.appendChild(opt);
   }
-  return html;
 }
 
 function removeDuplicates() {
-  const used = new Set();
-  const map = {};
-
-  allCodes.forEach(c => {
-    const bSel = document.getElementById("B_" + c);
-    const wSel = document.getElementById(c + "_W");
-    if (!bSel.disabled && bSel.value) used.add(bSel.value);
-    if (!wSel.disabled && wSel.value) used.add(wSel.value);
-    map["B_" + c] = bSel.value;
-    map[c + "_W"] = wSel.value;
+  const selected = {};
+  allCodes.forEach(code => {
+    const bSel = document.getElementById("B_" + code);
+    const wSel = document.getElementById(code + "_W");
+    if (!bSel.disabled && bSel.value) selected["B_" + code] = bSel.value;
+    if (!wSel.disabled && wSel.value) selected[code + "_W"] = wSel.value;
   });
 
-  allCodes.forEach(c => {
-    const bSel = document.getElementById("B_" + c);
-    const wSel = document.getElementById(c + "_W");
-    if (!bSel.disabled) bSel.innerHTML = genOptions(Array.from(used), map["B_" + c]);
-    if (!wSel.disabled) wSel.innerHTML = genOptions(Array.from(used), map[c + "_W"]);
+  const used = new Set(Object.values(selected));
+
+  allCodes.forEach(code => {
+    const bSel = document.getElementById("B_" + code);
+    const wSel = document.getElementById(code + "_W");
+
+    if (!bSel.disabled) {
+      const current = bSel.value;
+      populateDropdown(bSel);
+      [...bSel.options].forEach(opt => {
+        if (opt.value && opt.value !== current && used.has(opt.value)) {
+          opt.disabled = true;
+        }
+      });
+      bSel.value = current;
+    }
+    if (!wSel.disabled) {
+      const current = wSel.value;
+      populateDropdown(wSel);
+      [...wSel.options].forEach(opt => {
+        if (opt.value && opt.value !== current && used.has(opt.value)) {
+          opt.disabled = true;
+        }
+      });
+      wSel.value = current;
+    }
   });
 }
 
@@ -99,38 +130,44 @@ function validateForm() {
 <label>請選擇最重要準則：</label>
 <select id="best" name="best" onchange="updateLabels()" required>
   <option value="">請選擇</option>
-  <option value="C1">C1</option><option value="C2">C2</option><option value="C3">C3</option>
-  <option value="C4">C4</option><option value="C5">C5</option><option value="C6">C6</option>
-</select><br><br>
+<option value="C1">C1</option>
+<option value="C2">C2</option>
+<option value="C3">C3</option>
+<option value="C4">C4</option>
+<option value="C5">C5</option>
+<option value="C6">C6</option></select><br><br>
 
 <label>請選擇最不重要準則：</label>
 <select id="worst" name="worst" onchange="updateLabels()" required>
   <option value="">請選擇</option>
-  <option value="C1">C1</option><option value="C2">C2</option><option value="C3">C3</option>
-  <option value="C4">C4</option><option value="C5">C5</option><option value="C6">C6</option>
-</select>
+<option value="C1">C1</option>
+<option value="C2">C2</option>
+<option value="C3">C3</option>
+<option value="C4">C4</option>
+<option value="C5">C5</option>
+<option value="C6">C6</option></select>
 
 <h3 id="bestTitle">最重要的準則：</h3>
 <table><tr><th>準則</th><th>與最重要準則的比較值</th></tr>
-<tr><td>C1</td><td><select id="B_C1" name="B_C1" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
-<tr><td>C2</td><td><select id="B_C2" name="B_C2" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
-<tr><td>C3</td><td><select id="B_C3" name="B_C3" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
-<tr><td>C4</td><td><select id="B_C4" name="B_C4" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
-<tr><td>C5</td><td><select id="B_C5" name="B_C5" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
-<tr><td>C6</td><td><select id="B_C6" name="B_C6" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
+<tr><td>C1</td><td><select id="B_C1" name="B_C1" onchange="removeDuplicates()"></select></td></tr>
+<tr><td>C2</td><td><select id="B_C2" name="B_C2" onchange="removeDuplicates()"></select></td></tr>
+<tr><td>C3</td><td><select id="B_C3" name="B_C3" onchange="removeDuplicates()"></select></td></tr>
+<tr><td>C4</td><td><select id="B_C4" name="B_C4" onchange="removeDuplicates()"></select></td></tr>
+<tr><td>C5</td><td><select id="B_C5" name="B_C5" onchange="removeDuplicates()"></select></td></tr>
+<tr><td>C6</td><td><select id="B_C6" name="B_C6" onchange="removeDuplicates()"></select></td></tr>
 </table>
 
 <h3 id="worstTitle">最不重要的準則：</h3>
 <table><tr><th>準則</th><th>與最不重要準則的比較值</th></tr>
-<tr><td>C1</td><td><select id="C1_C1" name="C1_C1" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
-<tr><td>C2</td><td><select id="C2_C2" name="C2_C2" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
-<tr><td>C3</td><td><select id="C3_C3" name="C3_C3" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
-<tr><td>C4</td><td><select id="C4_C4" name="C4_C4" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
-<tr><td>C5</td><td><select id="C5_C5" name="C5_C5" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
-<tr><td>C6</td><td><select id="C6_C6" name="C6_C6" onchange="removeDuplicates()"><option value="">請選擇</option></select></td></tr>
+<tr><td>C1</td><td><select id="C1_C1" name="C1_C1" onchange="removeDuplicates()"></select></td></tr>
+<tr><td>C2</td><td><select id="C2_C2" name="C2_C2" onchange="removeDuplicates()"></select></td></tr>
+<tr><td>C3</td><td><select id="C3_C3" name="C3_C3" onchange="removeDuplicates()"></select></td></tr>
+<tr><td>C4</td><td><select id="C4_C4" name="C4_C4" onchange="removeDuplicates()"></select></td></tr>
+<tr><td>C5</td><td><select id="C5_C5" name="C5_C5" onchange="removeDuplicates()"></select></td></tr>
+<tr><td>C6</td><td><select id="C6_C6" name="C6_C6" onchange="removeDuplicates()"></select></td></tr>
 </table>
 
-<br><br><input type="submit" value="提交問卷" style="font-size:16px; padding:10px 20px;">
+<br><br><input type="submit" value="提交問卷" style="font-size:16px;padding:10px 20px;">
 </form>
 </body>
 </html>
