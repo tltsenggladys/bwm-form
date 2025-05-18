@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <title>BWM 正式問卷</title>
+  <style>
+    body { font-family: Arial; margin: 30px; }
+    input { width: 50px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    td, th { border: 1px solid #ccc; padding: 6px; text-align: center; }
+  </style>
+  <script>
+function updateLabels() {
+  const best = document.getElementById("best").value;
+  const worst = document.getElementById("worst").value;
+  const bestLabel = document.getElementById("best").options[document.getElementById("best").selectedIndex].text;
+  const worstLabel = document.getElementById("worst").options[document.getElementById("worst").selectedIndex].text;
+
+  document.getElementById("bestTitle").textContent = "最重要的準則：" + bestLabel;
+  document.getElementById("worstTitle").textContent = "最不重要的準則：" + worstLabel;
+
+  const all = ["C1", "C2", "C3", "C4", "C5", "C6"];
+  all.forEach(c => {
+    document.getElementById("B_" + c).value = "";
+    document.getElementById("B_" + c).readOnly = false;
+    document.getElementById(c + "_W").value = "";
+    document.getElementById(c + "_W").readOnly = false;
+  });
+
+  if (best) {
+    document.getElementById("B_" + best).value = 1;
+    document.getElementById("B_" + best).readOnly = true;
+    document.getElementById(best + "_W").value = 9;
+    document.getElementById(best + "_W").readOnly = true;
+  }
+  if (worst) {
+    document.getElementById("B_" + worst).value = 9;
+    document.getElementById("B_" + worst).readOnly = true;
+    document.getElementById(worst + "_W").value = 1;
+    document.getElementById(worst + "_W").readOnly = true;
+  }
+}
+
+function validateForm() {
+  const allB = ["B_C1", "B_C2", "B_C3", "B_C4", "B_C5", "B_C6"];
+  const allW = ["C1_W", "C2_W", "C3_W", "C4_W", "C5_W", "C6_W"];
+  const values = [];
+
+  allB.forEach(id => {
+    const input = document.getElementById(id);
+    const val = input.value.trim();
+    if (val !== "" && val !== "1" && val !== "9") {
+      values.push("B:" + val);
+    }
+  });
+  allW.forEach(id => {
+    const input = document.getElementById(id);
+    const val = input.value.trim();
+    if (val !== "" && val !== "1" && val !== "9") {
+      values.push("W:" + val);
+    }
+  });
+
+  const seen = new Set();
+  for (let v of values) {
+    const actualVal = v.slice(2);
+    if (seen.has(actualVal)) {
+      alert("出現重複的重要程度分數：" + actualVal + "\n請避免在比較中使用相同的數值（不含自動填入的 1 與 9）");
+      return false;
+    }
+    seen.add(actualVal);
+  }
+  return true;
+}
+</script>
+</head>
+<body>
+<h2>BWM 問卷：共享單車保單保障擴展</h2>
+
+<form method="post" action="https://script.google.com/macros/s/AKfycbzTHn5FUqJGKCNRAphVwWLy-xB63c-48HdImB3hkCK6vOTtaJFX-7_crTyNBr6nlh69Qg/exec" onsubmit="return validateForm();">
+
+<label>請選擇最重要準則：</label>
+<select id="best" name="best" onchange="updateLabels()" required>
+  <option value="">請選擇</option>
+<option value="C1">C1 風險保障適配性</option>
+<option value="C2">C2 價格接受與保費敏感性</option>
+<option value="C3">C3 使用便利與數位體驗</option>
+<option value="C4">C4 制度合法性與法規合規</option>
+<option value="C5">C5 市場與利害關係人接受度</option>
+<option value="C6">C6 理賠執行與操作風險</option>
+</select><br><br>
+<label>請選擇最不重要準則：</label>
+<select id="worst" name="worst" onchange="updateLabels()" required>
+<option value="">請選擇</option>
+<option value="C1">C1 風險保障適配性</option>
+<option value="C2">C2 價格接受與保費敏感性</option>
+<option value="C3">C3 使用便利與數位體驗</option>
+<option value="C4">C4 制度合法性與法規合規</option>
+<option value="C5">C5 市場與利害關係人接受度</option>
+<option value="C6">C6 理賠執行與操作風險</option>
+</select>
+<h3 id="bestTitle">最重要的準則：</h3>
+<table>
+<tr><th>準則</th><th>與最重要的比較值</th></tr>
+<tr><td>C1 風險保障適配性</td><td><input id="B_C1" name="B_C1" /></td></tr>
+<tr><td>C2 價格接受與保費敏感性</td><td><input id="B_C2" name="B_C2" /></td></tr>
+<tr><td>C3 使用便利與數位體驗</td><td><input id="B_C3" name="B_C3" /></td></tr>
+<tr><td>C4 制度合法性與法規合規</td><td><input id="B_C4" name="B_C4" /></td></tr>
+<tr><td>C5 市場與利害關係人接受度</td><td><input id="B_C5" name="B_C5" /></td></tr>
+<tr><td>C6 理賠執行與操作風險</td><td><input id="B_C6" name="B_C6" /></td></tr>
+</table>
+<h3 id="worstTitle">最不重要的準則：</h3>
+<table>
+<tr><th>準則</th><th>與最不重要的比較值</th></tr>
+<tr><td>C1 風險保障適配性</td><td><input id="C1_W" name="C1_W" /></td></tr>
+<tr><td>C2 價格接受與保費敏感性</td><td><input id="C2_W" name="C2_W" /></td></tr>
+<tr><td>C3 使用便利與數位體驗</td><td><input id="C3_W" name="C3_W" /></td></tr>
+<tr><td>C4 制度合法性與法規合規</td><td><input id="C4_W" name="C4_W" /></td></tr>
+<tr><td>C5 市場與利害關係人接受度</td><td><input id="C5_W" name="C5_W" /></td></tr>
+<tr><td>C6 理賠執行與操作風險</td><td><input id="C6_W" name="C6_W" /></td></tr>
+</table>
+<br><br><input type="submit" value="提交問卷" style="font-size:16px;padding:10px 20px;">
+</form>
+</body>
+</html>
